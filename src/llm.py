@@ -1,4 +1,6 @@
 import json
+import os
+
 import requests
 from openai import OpenAI  # 导入OpenAI库用于访问GPT模型
 from logger import LOG  # 导入日志模块
@@ -50,12 +52,19 @@ class LLM:
         """
         LOG.info(f"使用 OpenAI {self.config.openai_model_name} 模型生成报告。")
         try:
-            response = self.client.chat.completions.create(
-                model=self.config.openai_model_name,  # 使用配置中的OpenAI模型名称
-                messages=messages
+            # 确保初始化设置了APIkey
+            client = OpenAI(
+                api_key=os.environ.get("OPENAI_API_KEY") # 从环境变量中加载API密钥
             )
-            LOG.debug("GPT 响应: {}", response)
-            return response.choices[0].message.content  # 返回生成的报告内容
+            #调用GPT模型生成聊天内容
+            response = client.chat.completions.create(
+                messages=messages,  # 消息列表
+                model=self.config.openai_model_name  # 模型名称，从配置中获取
+            )
+            #调试日志，查看完整响应内容
+            LOG.debug("GPT响应：{}",response)
+            #提取生成的报告内容并返回
+            return response['choices'][0]['message']['content']
         except Exception as e:
             LOG.error(f"生成报告时发生错误：{e}")
             raise
